@@ -1,50 +1,47 @@
 require('dotenv').config();
-
-const express = require('express');
+const { Configuration, OpenAIApi } = require("openai");
 const line = require('@line/bot-sdk');
-require('dotenv').config();
 
-// create LINE SDK config from env variables
+const configuration = new Configuration({
+    apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
+
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
-  channelSecret: process.env.CHANNEL_SECRET,
+    channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
+    channelSecret: process.env.CHANNEL_SECRET,
 };
-
-// create LINE SDK client
 const client = new line.Client(config);
 
-// create Express app
-// about Express itself: https://expressjs.com/
+const express = require('express');
 const app = express();
+const port = 3000;
 
-// register a webhook handler with middleware
-// about the middleware, please refer to doc
-app.post('/callback', line.middleware(config), (req, res) => {
-  Promise
-    .all(req.body.events.map(handleEvent))
-    .then((result) => res.json(result))
-    .catch((err) => {
-      console.error(err);
-      res.status(500).end();
-    });
+app.post('/webhook', line.middleware(config), (req, res) => {
+    Promise
+        .all(req.body.events.map(handleEvent))
+        .then((result) => res.json(result))
+        .catch((err) => {
+            console.error(err);
+            res.status(500).end();
+        });
 });
-
-// event handler
-function handleEvent(event) {
-  if (event.type !== 'message' || event.message.type !== 'text') {
-    // ignore non-text-message event
-    return Promise.resolve(null);
-  }
-
-  // create a echoing text message
-  const echo = { type: 'text', text: event.message.text };
-
-  // use reply API
-  return client.replyMessage(event.replyToken, echo);
-}
-
-// listen on port
-const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  console.log(`listening on ${port}`);
-});
+    console.log(`app is running on port ${port}`)
+})
+
+function handleEvent (event) {
+    if (event.type !== 'message' || event.message.type !== 'text') {
+        return Promise.resolve(null);
+    }
+    return openai.createCompletion({
+        model: "text-davinci-003",
+        prompt: event.message.text,
+        max_tokens: 500
+    }).then(response => {
+        return client.replyMessage(event.replyToken, {
+            type: 'text',
+            text: response.data.choices[0].text.trim()
+        });
+    });
+}
