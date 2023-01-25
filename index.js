@@ -3,13 +3,13 @@ const line = require('@line/bot-sdk');
 const express = require('express');
 const { Configuration, OpenAIApi } = require("openai"); // 他套件使用方式錯誤，我直接改掉
 const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 const openai = new OpenAIApi(configuration);
 
 const config = {
-    channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
-    channelSecret: process.env.CHANNEL_SECRET,
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
+  channelSecret: process.env.CHANNEL_SECRET,
 };
 
 const client = new line.Client(config);
@@ -26,23 +26,23 @@ app.post('/webhook', line.middleware(config), (req, res) => {
     });
 });
 
-function handleEvent(event) {
+function handleEvent (event) {
   if (event.type !== 'message' || event.message.type !== 'text') {
     return Promise.resolve(null);
   }
 
   return openai.createCompletion({ // 方法用錯修正
-        prompt: event.message.text,
-        model: "text-davinci-003", // 使用 model 而非 engine
-        max_tokens: 1000 // 應用 max_tokens 而非 maxTokens
-    }).then((completions) => {
-        // 少了 data 這層結構，並要加上 trim() 去除空白
-        const message = completions.data.choices[0].text.trim();
-        return client.replyMessage(event.replyToken, {
-            type: 'text',
-            text: message
-        });
+    prompt: event.message.text,
+    model: "text-davinci-003", // 使用 model 而非 engine
+    max_tokens: 1000 // 應用 max_tokens 而非 maxTokens
+  }).then((completions) => {
+    // 少了 data 這層結構，並要加上 trim() 去除空白
+    const message = completions.data.choices[0].text.trim();
+    return client.replyMessage(event.replyToken, {
+      type: 'text',
+      text: message
     });
+  });
 }
 
 app.listen(3000);

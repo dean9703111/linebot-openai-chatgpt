@@ -23,7 +23,7 @@ app.post('/webhook', line.middleware(config), (req, res) => {
     });
 });
 
-function handleEvent(event) {
+function handleEvent (event) {
   if (event.type !== 'message' || event.message.type !== 'text') {
     return Promise.resolve(null);
   }
@@ -32,16 +32,16 @@ function handleEvent(event) {
     .engines
     .completions
     .create({
-        prompt: event.message.text,
-        engine: "text-davinci-002",
-        maxTokens: 100
+      prompt: event.message.text,
+      engine: "text-davinci-002",
+      maxTokens: 100
     })
     .then((completions) => {
-        const message = completions.choices[0].text;
-        return client.replyMessage(event.replyToken, {
-            type: 'text',
-            text: message
-        });
+      const message = completions.choices[0].text;
+      return client.replyMessage(event.replyToken, {
+        type: 'text',
+        text: message
+      });
     });
 }
 
