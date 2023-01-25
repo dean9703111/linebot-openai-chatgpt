@@ -1,15 +1,12 @@
-require('dotenv').config(); // 皆採用 .env 讀取
 const line = require('@line/bot-sdk');
 const express = require('express');
-const { Configuration, OpenAIApi } = require("openai"); // 他套件使用方式錯誤，我直接改掉
-const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY,
-});
-const openai = new OpenAIApi(configuration);
+const openai = require('openai');
+
+openai.apiKey = "YOUR_API_KEY";
 
 const config = {
-    channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
-    channelSecret: process.env.CHANNEL_SECRET,
+  channelAccessToken: 'YOUR_CHANNEL_ACCESS_TOKEN',
+  channelSecret: 'YOUR_CHANNEL_SECRET'
 };
 
 const client = new line.Client(config);
@@ -31,13 +28,16 @@ function handleEvent(event) {
     return Promise.resolve(null);
   }
 
-  return openai.createCompletion({ // 方法用錯修正
+  return openai
+    .engines
+    .completions
+    .create({
         prompt: event.message.text,
-        model: "text-davinci-003", // 使用 model 而非 engine
-        max_tokens: 1000 // 應用 max_tokens 而非 maxTokens
-    }).then((completions) => {
-        // 少了 data 這層結構，並要加上 trim() 去除空白
-        const message = completions.data.choices[0].text.trim();
+        engine: "text-davinci-002",
+        maxTokens: 100
+    })
+    .then((completions) => {
+        const message = completions.choices[0].text;
         return client.replyMessage(event.replyToken, {
             type: 'text',
             text: message
